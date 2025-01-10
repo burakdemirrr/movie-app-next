@@ -1,51 +1,14 @@
-'use client';
-
-import dynamic from 'next/dynamic';
+import MovieCard from '@/components/MovieCard';
 import { movieService } from '@/services/movieService';
 import { Movie } from '@/lib/tmdb';
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 
-// Lazy load MovieCard component
-const MovieCard = dynamic(() => import('@/components/MovieCard'), {
-  loading: () => <MovieCardSkeleton />
-});
+interface SearchPageProps {
+  searchParams: { q: string };
+}
 
-import MovieCardSkeleton from '@/components/MovieCardSkeleton';
-
-export default function SearchPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const query = searchParams.get('q') || '';
-  const [movies, setMovies] = useState<{ results: Movie[], total_results: number } | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    async function fetchMovies() {
-      if (!query) return;
-      
-      setIsLoading(true);
-      try {
-        const results = await movieService.searchMovies(query);
-        setMovies(results);
-      } catch (error) {
-        console.error('Error fetching movies:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchMovies();
-  }, [query]);
-
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const searchQuery = formData.get('q') as string;
-    if (searchQuery) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-    }
-  };
+export default async function SearchPage({ searchParams }: SearchPageProps) {
+  const query = searchParams.q;
+  const movies = query ? await movieService.searchMovies(query) : null;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -53,7 +16,7 @@ export default function SearchPage() {
         <h1 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
           Discover Movies
         </h1>
-        <form onSubmit={handleSearch} className="relative">
+        <form className="relative">
           <div className="relative">
             <input
               type="text"
@@ -77,17 +40,11 @@ export default function SearchPage() {
         </form>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <MovieCardSkeleton key={index} />
-          ))}
-        </div>
-      ) : query && movies ? (
+      {query && movies && (
         <div>
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-bold text-white">
-              Results for "{query}"
+              Results for &ldquo;{query}&rdquo;
             </h2>
             <span className="text-gray-400">
               {movies.total_results} movies found
@@ -107,7 +64,9 @@ export default function SearchPage() {
             </div>
           )}
         </div>
-      ) : (
+      )}
+
+      {!query && (
         <div className="text-center py-12">
           <p className="text-gray-400 text-lg">Enter a movie title to start searching</p>
           <p className="text-gray-500 mt-2">Discover thousands of movies in our database</p>
