@@ -1,26 +1,25 @@
 'use client';
 
 import { movieService } from '@/services/movieService';
-import { tmdb, CastMember, Movie, MovieDetails } from '@/lib/tmdb';
+import { tmdb, CastMember, Movie } from '@/lib/tmdb';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 
 interface MovieDetailParams {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  };
 }
 
 export default function MovieDetail({ params }: MovieDetailParams) {
-  const { id } = use(params);
-  const [movie, setMovie] = useState<MovieDetails | null>(null);
+  const [movie, setMovie] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchMovie() {
       try {
-        const data = await movieService.getMovieDetails(parseInt(id));
+        const data = await movieService.getMovieDetails(parseInt(params.id));
         setMovie(data);
       } catch (error) {
         console.error('Error fetching movie:', error);
@@ -30,7 +29,7 @@ export default function MovieDetail({ params }: MovieDetailParams) {
     }
 
     fetchMovie();
-  }, [id]);
+  }, [params.id]);
 
   if (isLoading) {
     return (

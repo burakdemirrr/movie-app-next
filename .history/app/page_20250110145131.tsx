@@ -6,13 +6,6 @@ import { Movie } from '@/lib/tmdb';
 import { useEffect, useState, useMemo, useCallback, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
-import MovieCardSkeleton from '@/components/MovieCardSkeleton';
-
-// Lazy load MovieCard component
-const MovieCard = dynamic(() => import('@/components/MovieCard'), {
-  loading: () => <MovieCardSkeleton />,
-  ssr: false
-});
 
 const sortOptions = {
   popularity: '🔥 Popularity',

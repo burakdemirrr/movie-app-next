@@ -1,18 +1,12 @@
 'use client';
 
-import dynamic from 'next/dynamic';
+import MovieCard from '@/components/MovieCard';
+import MovieCardSkeleton from '@/components/MovieCardSkeleton';
 import { movieService } from '@/services/movieService';
 import { Movie } from '@/lib/tmdb';
-import { useEffect, useState, useMemo, useCallback, useTransition } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
-import MovieCardSkeleton from '@/components/MovieCardSkeleton';
-
-// Lazy load MovieCard component
-const MovieCard = dynamic(() => import('@/components/MovieCard'), {
-  loading: () => <MovieCardSkeleton />,
-  ssr: false
-});
 
 const sortOptions = {
   popularity: '🔥 Popularity',
@@ -115,73 +109,54 @@ export default function Home() {
 
       {/* Filters Section */}
       <div className="max-w-6xl mx-auto mb-8">
-        <div className="bg-gray-800/30 backdrop-blur-md rounded-2xl p-4 border border-gray-700/50">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            <div className="flex flex-wrap items-center gap-6">
-              {/* Sort Filter */}
-              <div className="relative group min-w-[180px]">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3 7H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    <path d="M6 12H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    <path d="M9 17H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                  <span className="text-sm font-medium text-gray-300">Sort by</span>
+        <div className="bg-gray-800/30 backdrop-blur-md rounded-xl p-6 border border-gray-700/50">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="relative group">
+                  <label className="text-sm font-medium text-gray-400 mb-1 sm:mb-0 block sm:inline">Sort by</label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortKey)}
+                    className="mt-1 sm:mt-0 sm:ml-2 px-4 py-2 bg-gray-700/50 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-sm appearance-none pr-8 hover:bg-gray-700 transition-colors"
+                  >
+                    {Object.entries(sortOptions).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-2 top-[60%] sm:top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortKey)}
-                  className="w-full px-4 py-3 bg-gradient-to-br from-gray-900/90 to-gray-800/90 text-white rounded-xl border border-gray-700/80 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 backdrop-blur-sm appearance-none hover:border-blue-500/30 transition-all duration-200 text-sm font-medium"
-                >
-                  {Object.entries(sortOptions).map(([key, label]) => (
-                    <option key={key} value={key} className="bg-gray-800 py-2">
-                      {label}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-3 top-[60%] transform -translate-y-1/2 pointer-events-none text-blue-400/80 group-hover:text-blue-400 transition-colors duration-200">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-              </div>
 
-              {/* Rating Filter */}
-              <div className="relative group min-w-[160px]">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span className="text-sm font-medium text-gray-300">Rating</span>
-                </div>
-                <select
-                  value={minRating}
-                  onChange={(e) => setMinRating(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-gradient-to-br from-gray-900/90 to-gray-800/90 text-white rounded-xl border border-gray-700/80 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 backdrop-blur-sm appearance-none hover:border-blue-500/30 transition-all duration-200 text-sm font-medium"
-                >
-                  <option value={0} className="bg-gray-800 py-2">All Ratings</option>
-                  <option value={5} className="bg-gray-800 py-2">⭐ 5+</option>
-                  <option value={6} className="bg-gray-800 py-2">⭐ 6+</option>
-                  <option value={7} className="bg-gray-800 py-2">⭐ 7+</option>
-                  <option value={8} className="bg-gray-800 py-2">⭐ 8+</option>
-                </select>
-                <div className="absolute right-3 top-[60%] transform -translate-y-1/2 pointer-events-none text-blue-400/80 group-hover:text-blue-400 transition-colors duration-200">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                <div className="relative group">
+                  <label className="text-sm font-medium text-gray-400 mb-1 sm:mb-0 block sm:inline">Rating</label>
+                  <select
+                    value={minRating}
+                    onChange={(e) => setMinRating(Number(e.target.value))}
+                    className="mt-1 sm:mt-0 sm:ml-2 px-4 py-2 bg-gray-700/50 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-sm appearance-none pr-8 hover:bg-gray-700 transition-colors"
+                  >
+                    <option value={0}>All Ratings</option>
+                    <option value={5}>⭐ 5+</option>
+                    <option value={6}>⭐ 6+</option>
+                    <option value={7}>⭐ 7+</option>
+                    <option value={8}>⭐ 8+</option>
+                  </select>
+                  <div className="absolute right-2 top-[60%] sm:top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* Results Count */}
             {debouncedSearch && (
-              <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-500/10 rounded-xl border border-blue-500/20 text-blue-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                </svg>
-                <span className="text-sm font-medium">
-                  {totalResults} movies found
-                </span>
+              <div className="flex items-center gap-2 px-4 py-2 bg-gray-700/50 rounded-lg backdrop-blur-sm">
+                <span className="text-sm font-medium text-gray-300">Found</span>
+                <span className="text-sm font-bold text-white">{totalResults}</span>
+                <span className="text-sm text-gray-300">movies</span>
               </div>
             )}
           </div>
